@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 const express = require('express');
 const {
   getAllUsers,
@@ -5,7 +6,7 @@ const {
   deleteUser,
   updateUser,
   getUser,
-} = require('./../controllers/userController');
+} = require('../controllers/userController');
 
 const router = express.Router();
 

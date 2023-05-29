@@ -15,7 +15,6 @@ exports.checkID = (req, res, next, val) => {
 };
 
 exports.checkBody = (req, res, next) => {
-  console.log('checkbody');
   if (!req.body.name || !req.body.price) {
     return res.status(404).json({
       status: 'fail',
@@ -40,7 +39,7 @@ exports.getTour = (req, res) => {
   const id = +req.params.id;
 
   const tour = tours.find((el) => el.id === id);
-  console.log(id);
+
   res.status(200).json({
     status: 'success',
     data: {
