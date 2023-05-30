@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 dotenv.config({ path: './config.env' });
 
+const app = require('./app');
+
 const dB = process.env.DATABASE.replace(
   '<PASSWORD>',
   process.env.DATABASE_PASSWORD
@@ -12,12 +14,11 @@ mongoose
     useNewUrlParser: true,
     useCreateIndex: true,
     useFindAndModify: false,
+    useUnifiedTopology: true,
   })
   .then((con) => {
-    console.log(con.connections);
+    console.log('mongo jumbo');
   });
-
-const app = require('./app');
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {});
