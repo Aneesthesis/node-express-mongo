@@ -1,5 +1,14 @@
 //const fs = require('fs');
+const { query } = require('express');
 const Tour = require('../models/tourModel');
+
+exports.aliasTopTours = (req, res, next) => {
+  req.query.limit = '5';
+  req.query.sort = '-ratingsAverage, price';
+  req.query.fields =
+    'name, price, difficulty, summary, duration, ratingsAverage';
+  next();
+};
 
 // const tours = JSON.parse(
 //   fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
@@ -30,6 +39,7 @@ const Tour = require('../models/tourModel');
 exports.getAllTours = async (req, res) => {
   try {
     // Build query
+
     // 1A) filtering
     const queryObject = { ...req.query };
     const excludedFields = ['page', 'sort', 'limit', 'fields'];
@@ -38,19 +48,37 @@ exports.getAllTours = async (req, res) => {
     console.log(req.query, queryObject);
 
     // 1B) advance filtering
-
     let queryStr = JSON.stringify(queryObject);
     queryStr = queryStr.replace(/\b(gte|gt|lt|lte)\b/g, (match) => `$${match}`);
 
     let query = Tour.find(JSON.parse(queryStr));
 
     // 2) sorting
-
     if (req.query.sort) {
       const sortBy = req.query.sort.split(',').join(' ');
       // {sort: price, averageRatings} => (price averageRatings)
       query = query.sort(sortBy);
     }
+
+    // 3) field limiting
+    if (req.query.fields) {
+      const fields = req.query.fields.split(',').join(' ');
+      query = query.select(fields);
+    } else {
+      query = query.select('-__v');
+    }
+    // 4) pagination
+    const page = +req.query.page || 1;
+    const limit = +req.query.limit || 100;
+    const skip = (page - 1) * limit;
+
+    query = query.skip(skip).limit(limit);
+
+    if (req.query.page) {
+      const numTours = Tour.countDocuments();
+      if (skip >= numTours) throw new Error('No more tours to show!');
+    }
+
     // Execute query
     const tours = await query;
 
