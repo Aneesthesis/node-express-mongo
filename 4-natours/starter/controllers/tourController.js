@@ -17,6 +17,7 @@ class APIFeatures {
   }
 
   filter() {
+    // 1A) Filtering
     const queryObj = { ...this.queryString };
     const excludedFields = ['page', 'sort', 'limit', 'fields'];
     excludedFields.forEach((el) => delete queryObj[el]);
@@ -65,7 +66,7 @@ class APIFeatures {
 
 exports.getAllTours = async (req, res) => {
   try {
-    // EXECUTE QUERY
+    // Execute Query
     const features = new APIFeatures(Tour.find(), req.query)
       .filter()
       .sort()
@@ -73,7 +74,7 @@ exports.getAllTours = async (req, res) => {
       .paginate();
     const tours = await features.query;
 
-    // SEND RESPONSE
+    // Send response
     res.status(200).json({
       status: 'success',
       results: tours.length,
@@ -81,13 +82,39 @@ exports.getAllTours = async (req, res) => {
         tours,
       },
     });
-  } catch (err) {
+  } catch (error) {
     res.status(404).json({
-      status: 'fail',
-      message: err,
+      status: 'failed',
+      message: error,
     });
   }
 };
+
+// exports.getAllTours = async (req, res) => {
+//   try {
+//     // EXECUTE QUERY
+//     const features = new APIFeatures(Tour.find(), req.query)
+//       .filter()
+//       .sort()
+//       .limitFields()
+//       .paginate();
+//     const tours = await features.query;
+
+//     // SEND RESPONSE
+//     res.status(200).json({
+//       status: 'success',
+//       results: tours.length,
+//       data: {
+//         tours,
+//       },
+//     });
+//   } catch (err) {
+//     res.status(404).json({
+//       status: 'fail',
+//       message: err,
+//     });
+//   }
+// };
 
 exports.getTour = async (req, res) => {
   try {
@@ -164,6 +191,38 @@ exports.deleteTour = async (req, res) => {
   }
 };
 
+exports.getTourStats = async (req, res) => {
+  try {
+    const stats = await Tour.aggregate([
+      {
+        $match: { ratingsAverage: { $gte: 4.5 } },
+      },
+      {
+        $group: {
+          _id: '$difficulty',
+          numRatings: { $sum: '$ratingsQuantity' },
+          numTours: { $sum: 1 },
+          avgRating: { $avg: '$ratingsAverage' },
+          avgPrice: { $avg: '$price' },
+          minPrice: { $min: '$price' },
+          maxPrice: { $max: '$price' },
+        },
+      },
+    ]);
+    res.status(200).json({
+      status: 'success',
+      data: {
+        stats,
+      },
+    });
+  } catch (error) {
+    res.status(404).json({
+      status: 'failed',
+      message: error,
+    });
+  }
+};
+
 //////////////////////////////////////////////////////////////////////////
 
 // class APIFeatures {
@@ -221,29 +280,3 @@ exports.deleteTour = async (req, res) => {
 //     return this;
 //   }
 // }
-
-//exports.getAllTours = async (req, res) => {
-//   try {
-//     // Execute Query
-//     const features = new APIFeatures(Tour.find(), req.query)
-//       .filter()
-//       .sort()
-//       .limitFields()
-//       .paginate();
-//     const tours = await features.query;
-
-//     // Send response
-//     res.status(200).json({
-//       status: 'success',
-//       results: tours.length,
-//       data: {
-//         tours,
-//       },
-//     });
-//   } catch (error) {
-//     res.status(404).json({
-//       status: 'failed',
-//       message: error,
-//     });
-//   }
-// };
