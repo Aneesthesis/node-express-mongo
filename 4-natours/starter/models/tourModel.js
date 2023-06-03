@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
+const validator = require('validator');
 
 const tourSchema = new mongoose.Schema(
   {
@@ -8,6 +9,9 @@ const tourSchema = new mongoose.Schema(
       trim: true,
       required: [true, 'A tour must have a name'],
       unique: true,
+      maxlength: [40, 'A tour name must have less or equal than 40 characters'],
+      minlength: [10, 'A tour name must have less or equal than 10 characters'],
+      validate: [validator.isAlpha, 'Tour name must contain characters only'],
     },
     slug: String,
     duration: {
@@ -21,14 +25,36 @@ const tourSchema = new mongoose.Schema(
     difficulty: {
       type: String,
       required: [true, 'A tour must have a difficulty'],
+      enum: {
+        values: ['easy', 'medium', 'difficulty'],
+        message: 'Difficulty is either easy, medium, or difficult',
+      },
     },
 
-    ratingsAverage: { type: Number, default: 4.5 },
-    ratingsQuantity: { type: Number, default: 0 },
+    ratingsAverage: {
+      type: Number,
+      default: 4.5,
+      min: [1, 'rating must be atleast 1.0'], //min, max also go for dates
+    },
+    ratingsQuantity: {
+      type: Number,
+      default: 0,
+      max: [5, 'rating cannot be above 5.0'],
+    },
 
     price: { type: Number, required: [true, 'A tour must have a price'] },
 
-    discount: Number,
+    priceDiscount: {
+      type: Number,
+      validate: {
+        validator: function (val) {
+          // THIS ONLY POINTS TO CURRENT DOC ON NEW DOCUMENT CREATION
+          return val < this.price; // 100 < 200
+        },
+        message: 'Discount price ({VALUE}) should be below original price',
+      },
+    },
+
     summary: {
       type: String,
       trim: true,
@@ -64,7 +90,7 @@ tourSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7;
 });
 
-// DOCUMENT MIDDLEWARE: runs before .save() and .create() but  not on .insertMany()
+// DOCUMENT MIDDLEWARE: runs before .save() and .create() but  not on .insertMany() ot update
 tourSchema.pre('save', function (next) {
   this.slug = slugify(this.name, { lower: true });
   next();
@@ -82,13 +108,19 @@ tourSchema.pre('save', function (next) {
 
 // QUERY MIDDLEWARE
 tourSchema.pre(/^find/, function (next) {
-  this.find({ secretTour: { $ne: false } });
+  this.find({ secretTour: { $ne: true } });
   this.start = Date.now();
   next();
 });
 
 tourSchema.post(/^find/, function (docs, next) {
   console.log(`query took ${Date.now() - this.start} millisecs`);
+  next();
+});
+
+// AGGREGATION MIDDLEWARE
+tourSchema.pre('aggregate', function (next) {
+  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
   next();
 });
 
