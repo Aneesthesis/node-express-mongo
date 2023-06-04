@@ -1,7 +1,8 @@
 {
   "scripts": {
     "start": "nodemon server.js",
-    "start:prod": "`NODE_ENV=production nodemon server.js"
+    "start:prod": "`NODE_ENV=production nodemon server.js",
+    "debug": "ndb server.js"
   },
   "dependencies": {
     "dotenv": "^16.0.3",
@@ -12,6 +13,7 @@
     "validator": "^13.9.0"
   },
   "devDependencies": {
+    "ndb": "^1.1.5",
     "nodemon": "^2.0.22"
   },
   "engines": {
