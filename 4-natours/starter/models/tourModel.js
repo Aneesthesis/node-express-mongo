@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
+const User = require('./userModel');
 //const validator = require('validator');
 
 const tourSchema = new mongoose.Schema(
@@ -26,7 +27,7 @@ const tourSchema = new mongoose.Schema(
       type: String,
       required: [true, 'A tour must have a difficulty'],
       enum: {
-        values: ['easy', 'medium', 'difficulty'],
+        values: ['easy', 'medium', 'difficult'],
         message: 'Difficulty is either easy, medium, or difficult',
       },
     },
@@ -35,11 +36,11 @@ const tourSchema = new mongoose.Schema(
       type: Number,
       default: 4.5,
       min: [1, 'rating must be atleast 1.0'], //min, max also go for dates
+      max: [5, 'rating cannot be above 5.0'],
     },
     ratingsQuantity: {
       type: Number,
       default: 0,
-      max: [5, 'rating cannot be above 5.0'],
     },
 
     price: { type: Number, required: [true, 'A tour must have a price'] },
@@ -79,7 +80,33 @@ const tourSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    startLocation: {
+      // GEOJSON
+      type: {
+        type: String,
+        default: 'Point',
+        enum: ['Point'],
+      },
+      coordinates: [Number],
+      address: String,
+      description: String,
+    },
+    locations: [
+      {
+        type: {
+          type: String,
+          default: 'Point',
+          enum: ['Point'],
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number,
+      },
+    ],
+    guides: Array,
   },
+
   {
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
@@ -96,6 +123,11 @@ tourSchema.pre('save', function (next) {
   next();
 });
 
+tourSchema.pre('save', async function (next) {
+  const guidesPromises = this.guides.map(async (id) => await User.findById(id));
+  this.guides = await Promise.all(guidesPromises);
+  next();
+});
 // tourSchema.pre('save', function (next) {
 //   console.log('Will save doc');
 //   next();
