@@ -124,7 +124,7 @@ tourSchema.virtual('reviews', {
   foreignField: 'tour',
 });
 
-// DOCUMENT MIDDLEWARE: runs before .save() and .create() but  not on .insertMany() ot update
+// DOCUMENT MIDDLEWARE: runs before .save() and .create() but  not on .insertMany() or update
 tourSchema.pre('save', function (next) {
   this.slug = slugify(this.name, { lower: true });
   next();
