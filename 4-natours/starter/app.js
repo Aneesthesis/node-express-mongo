@@ -25,6 +25,14 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // set security HTTP headers
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "script-src  'self' api.mapbox.com",
+    "script-src-elem 'self' api.mapbox.com"
+  );
+  next();
+});
 app.use(helmet());
 
 // development logging
